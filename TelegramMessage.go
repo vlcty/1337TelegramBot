@@ -12,6 +12,7 @@ type TelegramMessage struct {
     Message struct {
         Chat struct {
             ID int
+            Title string
         }
         From struct {
             Username string
@@ -28,6 +29,10 @@ type TelegramResponse struct {
 
 func (message *TelegramMessage) GetChatID() int {
     return message.Message.Chat.ID
+}
+
+func (message *TelegramMessage) GetChatTitle() string {
+    return message.Message.Chat.Title
 }
 
 func (message *TelegramMessage) GetUsername() string {

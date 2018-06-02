@@ -180,6 +180,7 @@ Hallo! Ich bin der 1337 Telegram Bot von @veloc1ty
 
 Version: %s
 Du bist: @%s
+Die Gruppe heißt: %s
 Serverzeit:
   Stunde:   %d
   Minute:   %d
@@ -190,6 +191,7 @@ Serverzeit:
     message.Answer(fmt.Sprintf(status,
             Bot_Version,
             message.GetUsername(),
+            message.GetChatTitle(),
             currentTime.Hour(),
             currentTime.Minute(),
             currentTime.Second(),
