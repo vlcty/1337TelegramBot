@@ -10,27 +10,40 @@ import (
     "net/http"
     "encoding/json"
     "io/ioutil"
+    "os"
 
     _ "github.com/mattn/go-sqlite3"
 )
 
-
-
 var database *sql.DB
+var botToken string
 
 const (
     BotCommand_Start        string = "start"
     BotCommand_Stats        string = "stats"
     BotCommand_1337         string = "1337"
     BotCommand_Bonus        string = "bonus"
-    BotCommand_SendToChats  string = "send1337NowSuperSecretNobodyTriggerThisPlease"
+    BotCommand_Status       string = "status"
+
+    Bot_Version             string = "1.0"
 )
 
 func main() {
     log.Println("Starting 1337Bot")
 
-    OpenDatabase();
-    PrepareWebserver();
+    GetBotToken()
+    OpenDatabase()
+    PrepareWebserver()
+}
+
+func GetBotToken() {
+    botToken = os.Getenv("BOTTOKEN")
+
+    if len(botToken) != 0 {
+        log.Printf("Bot token is: %s", botToken)
+    } else {
+        log.Fatal("Did not get a bot token")
+    }
 }
 
 func HandleHTTPCall(writer http.ResponseWriter, request *http.Request) {
@@ -56,8 +69,16 @@ func PrepareWebserver() {
 
     log.Println("Starting HTTP server")
 
-    if err := http.ListenAndServe("127.0.0.1:8080", nil); err != nil {
-        log.Println("Was not able to stat the webservrer");
+    if _, err := os.Stat("./private.pem"); os.IsNotExist(err) {
+        log.Fatal("private.pem not found in binaries location")
+    }
+
+    if _, err := os.Stat("./public.pem"); os.IsNotExist(err) {
+        log.Fatal("private.pem not found in binaries location")
+    }
+
+    if err := http.ListenAndServeTLS("0.0.0.0:1337", "public.pem", "private.pem", nil); err != nil {
+        log.Println("Was not able to stat the webserver");
         log.Fatal(err)
     }
 }
@@ -90,7 +111,8 @@ func CreateTableRegisteredChats() {
     _, err := database.Exec(createStatement);
 
     if ( err != nil ) {
-        log.Fatal("Was not able to create database table registeredChats");
+        log.Println("Was not able to create database table registeredChats");
+        log.Panic(err)
     } else {
         log.Println("I maybe created database table registeredChats");
     }
@@ -136,9 +158,42 @@ func AnalyzePossibleCommand(message *TelegramMessage) {
         case BotCommand_Stats:
             SendStats(message)
 
+        case BotCommand_Status:
+            SendStatus(message)
+
         default:
             log.Println("I don't know the command. Doing nothing")
     }
+}
+
+func Broadcast1337() {
+
+}
+
+func SendStatus(message *TelegramMessage) {
+    log.Println("Sending status");
+
+    currentTime := GetCurrentTime()
+
+    status := `
+Hallo! Ich bin der 1337 Telegram Bot von @veloc1ty
+
+Version: %s
+Du bist: @%s
+Serverzeit:
+  Stunde:   %d
+  Minute:   %d
+  Sekunde:  %d
+  Zeitzone: %s
+    `
+
+    message.Answer(fmt.Sprintf(status,
+            Bot_Version,
+            message.GetUsername(),
+            currentTime.Hour(),
+            currentTime.Minute(),
+            currentTime.Second(),
+            currentTime.Location().String()))
 }
 
 func SendStats(message *TelegramMessage) {
@@ -161,8 +216,10 @@ func SendStats(message *TelegramMessage) {
 	defer rows.Close()
 
     statsString := "Hey %s, hier ist die Tabelle:\n\n"
+    rowsFound := false
 
 	for rows.Next() {
+        rowsFound = true
 		var username string
 		var count int
 
@@ -175,7 +232,11 @@ func SendStats(message *TelegramMessage) {
         statsString += fmt.Sprintf("%s -> %d", username, count)
 	}
 
-    message.Answer(fmt.Sprintf(statsString, message.GetUsername()))
+    if ( rowsFound ) {
+        message.Answer(fmt.Sprintf(statsString, message.GetUsername()))
+    } else {
+        message.Answer("Bis jetzt ist die Liste noch leer")
+    }
 }
 
 func StartBot(message *TelegramMessage) {
@@ -192,12 +253,21 @@ func StartBot(message *TelegramMessage) {
     }
 }
 
+func GetCurrentTime() time.Time {
+    location, err := time.LoadLocation("Europe/Berlin")
+
+    if err != nil {
+        log.Printf("Error loading time location: %s", err)
+    }
+
+    return time.Now().In(location)
+}
+
 func IsIt1337() bool {
-    currentTime := time.Now()
+
+    currentTime := GetCurrentTime()
 
     log.Printf("Current time is %d:%d", currentTime.Hour(), currentTime.Minute())
-
-    // return true
 
     if currentTime.Hour() == 13 && currentTime.Minute() == 37 {
         log.Printf("It's 13:37!")

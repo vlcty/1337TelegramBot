@@ -2,6 +2,10 @@ package main
 
 import (
     "log"
+    "encoding/json"
+    "net/http"
+    "fmt"
+    "bytes"
 )
 
 type TelegramMessage struct {
@@ -14,6 +18,12 @@ type TelegramMessage struct {
         }
         Text string
     }
+}
+
+type TelegramResponse struct {
+    Chat_ID int `json:"chat_id"`
+    Text string `json:"text"`
+    // Disable_notification bool `json:"disable_notification"`
 }
 
 func (message *TelegramMessage) GetChatID() int {
@@ -29,5 +39,21 @@ func (message *TelegramMessage) GetMessage() string {
 }
 
 func (message *TelegramMessage) Answer(whatToSay string) {
-    log.Printf("Sending message to chat %d: %s", message.GetChatID(), whatToSay);
+    log.Printf("Sending message to chat %d: %s", message.GetChatID(), whatToSay)
+
+    telegramResponse := TelegramResponse{
+        Chat_ID: message.GetChatID(),
+        Text: whatToSay,
+        //Disable_notification: true
+    }
+
+    b := new(bytes.Buffer)
+    json.NewEncoder(b).Encode(telegramResponse)
+
+    _, err := http.Post(fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", botToken),
+        "application/json;charset=utf-8", b )
+
+    if err != nil {
+        log.Println(err)
+    }
 }
