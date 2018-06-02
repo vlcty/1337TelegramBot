@@ -181,6 +181,7 @@ Hallo! Ich bin der 1337 Telegram Bot von @veloc1ty
 Version: %s
 Du bist: @%s
 Die Gruppe heißt: %s
+Ich bin hier registriert: %t
 Serverzeit:
   Stunde:   %d
   Minute:   %d
@@ -192,6 +193,7 @@ Serverzeit:
             Bot_Version,
             message.GetUsername(),
             message.GetChatTitle(),
+            IsBotAlreadyRegisteredForThisChat(message),
             currentTime.Hour(),
             currentTime.Minute(),
             currentTime.Second(),
