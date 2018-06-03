@@ -166,10 +166,6 @@ func AnalyzePossibleCommand(message *TelegramMessage) {
     }
 }
 
-func Broadcast1337() {
-
-}
-
 func SendStatus(message *TelegramMessage) {
     log.Println("Sending status");
 
@@ -233,7 +229,7 @@ func SendStats(message *TelegramMessage) {
             log.Println(err)
 		}
 
-        statsString += fmt.Sprintf("%s -> %d", username, count)
+        statsString += fmt.Sprintf("%s -> %d\n", username, count)
 	}
 
     if ( rowsFound ) {
